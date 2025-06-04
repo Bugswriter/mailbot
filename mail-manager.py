@@ -1,22 +1,25 @@
 import imaplib
 import email
 from email.header import decode_header
+from dotenv import load_dotenv
 import google.generativeai as genai
 import time
 import logging
 import os
 import re
 
+load_dotenv()
+
 # --- CONFIGURATION ---
 # IMAP Server Settings (Update with your details)
 IMAP_HOST = 'moose.mxrouting.net'  # e.g., 'imap.gmail.com'
-IMAP_USER = 'suraj@bugswriter.com'
-IMAP_PASSWORD = os.environ.get('EMAIL_PASSWORD') # Recommended: Store password in environment variable
+IMAP_USER = os.getenv('EMAIL_USERNAME')
+IMAP_PASSWORD = os.getenv('EMAIL_PASSWORD') # Recommended: Store password in environment variable
 IMAP_PORT = 993  # Default for IMAP SSL
 USE_SSL = True
 
 # Gemini AI API Key (Update with your key)
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') # Recommended: Store API key in environment variable
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY') # Recommended: Store API key in environment variable
 
 # Email Processing Settings
 SOURCE_INBOX = "Inbox"  # Where new emails arrive
