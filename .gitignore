@@ -1,0 +1,8 @@
+.env
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+config.yaml
+port_scanner.log
+*.log
