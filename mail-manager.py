@@ -22,18 +22,18 @@ USE_SSL = True
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY') # Recommended: Store API key in environment variable
 
 # Email Processing Settings
-SOURCE_INBOX = "Inbox"  # Where new emails arrive
+SOURCE_INBOX = "INBOX"  # Where new emails arrive
 # IMPORTANT: These folder names must EXACTLY match your IMAP folder names (case-sensitive)
 FOLDER_MAPPING = {
     "Personal": SOURCE_INBOX, # Personal emails stay in the Inbox (or move if SOURCE_INBOX is not "INBOX")
-    "Spam": "Inbox.spam",       # Your existing 'spam' folder (e.g., Gmail's is often '[Gmail]/Spam')
+    "Spam": "INBOX.spam",       # Your existing 'spam' folder (e.g., Gmail's is often '[Gmail]/Spam')
     "Accounts": "Accounts",    # This is a NEW folder you need to create
     "Promotions": "Junk"       # Your existing 'Junk' folder (some use 'Junk E-mail')
 }
 VALID_CATEGORIES = ["Personal", "Spam", "Accounts", "Promotions"]
 
 # Behavior Settings
-PROCESS_DELAY_SECONDS = 15   # Delay between processing each email (to be gentle on Gemini API)
+PROCESS_DELAY_SECONDS = 60   # Delay between processing each email (to be gentle on Gemini API)
 CHECK_INTERVAL_SECONDS = 300 # How often to check for new emails when inbox is empty (5 minutes)
 MAX_BODY_CHARS_FOR_GEMINI = 2000 # Max characters of body to send to Gemini (adjust as needed)
 
