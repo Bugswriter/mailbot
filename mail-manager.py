@@ -25,17 +25,17 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY') # Recommended: Store API key in env
 SOURCE_INBOX = "INBOX"  # Where new emails arrive
 # IMPORTANT: These folder names must EXACTLY match your IMAP folder names (case-sensitive)
 FOLDER_MAPPING = {
-    "Personal": SOURCE_INBOX, # Personal emails stay in the Inbox (or move if SOURCE_INBOX is not "INBOX")
-    "Spam": "INBOX.spam",       # Your existing 'spam' folder (e.g., Gmail's is often '[Gmail]/Spam')
+    "Personal": SOURCE_INBOX, # Personal emails stay in the Inbox
+    "Spam": "INBOX.spam",       # Your existing 'spam' folder
     "Accounts": "Accounts",    # This is a NEW folder you need to create
-    "Promotions": "Junk"       # Your existing 'Junk' folder (some use 'Junk E-mail')
+    "Promotions": "Junk"       # Your existing 'Junk' folder
 }
 VALID_CATEGORIES = ["Personal", "Spam", "Accounts", "Promotions"]
 
 # Behavior Settings
 PROCESS_DELAY_SECONDS = 60   # Delay between processing each email (to be gentle on Gemini API)
 CHECK_INTERVAL_SECONDS = 300 # How often to check for new emails when inbox is empty (5 minutes)
-MAX_BODY_CHARS_FOR_GEMINI = 2000 # Max characters of body to send to Gemini (adjust as needed)
+MAX_BODY_CHARS_FOR_GEMINI = 2000 # Max characters of body to send to Gemini
 
 # Logging Configuration
 LOG_FILE = 'mail_manager.log'
@@ -53,7 +53,7 @@ try:
     if not GEMINI_API_KEY:
         raise ValueError("GEMINI_API_KEY environment variable not set.")
     genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel('gemini-1.5-flash-latest') # Or your preferred model
+    gemini_model = genai.GenerativeModel('gemini-1.5-flash-latest')
 except Exception as e:
     logging.error(f"Failed to configure Gemini AI: {e}")
     exit()
@@ -61,43 +61,20 @@ except Exception as e:
 # --- HELPER FUNCTIONS ---
 def is_imap_connected(connection):
     """Checks if the IMAP connection is alive using NOOP."""
-    if not connection: # Handles case where connection object is None
+    if not connection:
         return False
     try:
-        # Check if the 'socket' attribute exists and the socket it returns is not None.
-        # This helps avoid errors if the connection object is not fully initialized or already closed.
         if not hasattr(connection, 'socket') or connection.socket() is None:
-            logging.debug("is_imap_connected: No active socket found for the connection object.")
+            logging.debug("is_imap_connected: No active socket found.")
             return False
-
         status, _ = connection.noop()
         return status == 'OK'
     except (imaplib.IMAP4.abort, imaplib.IMAP4.error, BrokenPipeError, OSError) as e:
-        # These exceptions typically indicate a dead or problematic connection
         logging.warning(f"is_imap_connected: noop check failed with {type(e).__name__}: {e}")
         return False
-    except AttributeError as e:
-        # Catching AttributeError if 'noop' or other methods are missing,
-        # which would indicate 'connection' is not a valid IMAP4 object.
-        logging.warning(f"is_imap_connected: AttributeError on connection object: {e}")
-        return False
-    except Exception as e: # Catch any other unexpected exceptions
+    except Exception as e:
         logging.error(f"is_imap_connected: Unexpected error during NOOP check: {e}", exc_info=True)
         return False
-
-# ... (other helper functions like connect_to_imap, decode_email_header, etc.) ...
-
-def clean_filename(name):
-    """Remove or replace characters that are invalid in IMAP folder names."""
-    # Replace common problematic characters with underscores or remove them
-    # This is a basic version; IMAP folder name restrictions can vary.
-    # Check your server's specific restrictions if you encounter issues.
-    name = name.replace('/', '_') # Forward slashes are common delimiters
-    name = name.replace('\\', '_')
-    name = re.sub(r'[^\x00-\x7F]+', '', name) # Remove non-ASCII characters
-    # Add more replacements if needed, e.g., for brackets, parentheses etc.
-    # For example, some servers might not like leading/trailing spaces or special chars like '*'
-    return name
 
 def connect_to_imap():
     """Connects to the IMAP server and logs in."""
@@ -126,8 +103,8 @@ def decode_email_header(header):
         if isinstance(part, bytes):
             try:
                 header_parts.append(part.decode(charset or 'utf-8', 'ignore'))
-            except LookupError: # Unknown encoding
-                header_parts.append(part.decode('utf-8', 'ignore')) # Fallback
+            except LookupError:
+                header_parts.append(part.decode('utf-8', 'ignore'))
         else:
             header_parts.append(part)
     return "".join(header_parts)
@@ -143,11 +120,11 @@ def get_email_body(msg):
                 try:
                     charset = part.get_content_charset() or 'utf-8'
                     body = part.get_payload(decode=True).decode(charset, 'ignore')
-                    break # Take the first plain text part
+                    break
                 except Exception as e:
                     logging.warning(f"Could not decode text/plain part: {e}")
                     continue
-    else: # Not multipart, try to get the plain text body directly
+    else:
         if msg.get_content_type() == 'text/plain':
             try:
                 charset = msg.get_content_charset() or 'utf-8'
@@ -156,14 +133,12 @@ def get_email_body(msg):
                 logging.warning(f"Could not decode non-multipart text/plain body: {e}")
     return body.strip()
 
-
 def classify_email_with_gemini(sender, subject, body):
     """Classifies email content using Gemini AI."""
     if not subject and not body:
         logging.warning("Email has no subject or body, classifying as Promotions by default.")
         return "Promotions"
 
-    # Truncate body if it's too long
     truncated_body = body[:MAX_BODY_CHARS_FOR_GEMINI]
     if len(body) > MAX_BODY_CHARS_FOR_GEMINI:
         logging.info(f"Email body truncated to {MAX_BODY_CHARS_FOR_GEMINI} chars for Gemini.")
@@ -188,7 +163,7 @@ Body:
 Category:"""
 
     try:
-        logging.debug(f"Sending prompt to Gemini: \n{prompt[:300]}...") # Log a snippet
+        logging.debug(f"Sending prompt to Gemini: \n{prompt[:300]}...")
         response = gemini_model.generate_content(prompt)
         category = response.text.strip()
         if category in VALID_CATEGORIES:
@@ -208,17 +183,15 @@ def move_email(mail_connection, email_id, destination_folder_name):
         return False
 
     try:
-        cleaned_folder_name = destination_folder_name
-
         # Copy the email to the destination folder
-        apply_label_result = mail_connection.copy(email_id, cleaned_folder_name)
+        apply_label_result = mail_connection.copy(email_id, destination_folder_name)
         if apply_label_result[0] == 'OK':
-            logging.info(f"Successfully copied email ID {email_id.decode()} to folder '{cleaned_folder_name}'.")
+            logging.info(f"Successfully copied email ID {email_id.decode()} to folder '{destination_folder_name}'.")
             # Mark the original email as deleted
             delete_result = mail_connection.store(email_id, '+FLAGS', '\\Deleted')
             if delete_result[0] == 'OK':
                 logging.info(f"Successfully marked email ID {email_id.decode()} as deleted from {SOURCE_INBOX}.")
-                # Permanently remove deleted emails from the source inbox
+                # Permanently remove deleted emails
                 expunge_result = mail_connection.expunge()
                 if expunge_result[0] == 'OK':
                     logging.info(f"Successfully expunged deleted emails from {SOURCE_INBOX}.")
@@ -230,9 +203,9 @@ def move_email(mail_connection, email_id, destination_folder_name):
                 logging.error(f"Failed to mark email ID {email_id.decode()} as deleted: {delete_result}")
                 return False
         else:
-            logging.error(f"Failed to copy email ID {email_id.decode()} to '{cleaned_folder_name}': {apply_label_result}")
+            logging.error(f"Failed to copy email ID {email_id.decode()} to '{destination_folder_name}': {apply_label_result}")
             if "TRYCREATE" in str(apply_label_result[1]).upper() or "NONEXISTENT" in str(apply_label_result[1]).upper():
-                logging.error(f"The folder '{cleaned_folder_name}' likely does not exist on the server. Please create it.")
+                logging.error(f"The folder '{destination_folder_name}' likely does not exist on the server. Please create it.")
             return False
     except (imaplib.IMAP4.abort, imaplib.IMAP4.error) as e:
         logging.error(f"IMAP operation error in move_email for ID {email_id.decode() if isinstance(email_id, bytes) else email_id}: {e}")
@@ -242,7 +215,7 @@ def move_email(mail_connection, email_id, destination_folder_name):
         return False
 
 
-# --- MAIN PROCESSING LOOP (REVISED) ---
+# --- MAIN PROCESSING LOOP ---
 def main():
     logging.info("Email classification script started.")
     if not IMAP_PASSWORD or not GEMINI_API_KEY:
@@ -276,11 +249,12 @@ def main():
                 continue
 
             ### MODIFICATION ###
-            # Search for only UNSEEN (unread) emails. This is more efficient
-            # and is the first step to not touching already-read emails.
-            typ, data = mail_connection.search(None, 'UNSEEN')
+            # Search for emails that are both UNSEEN (unread) and UNFLAGGED.
+            # This prevents the script from reprocessing emails it has already handled.
+            search_criteria = '(UNSEEN UNFLAGGED)'
+            typ, data = mail_connection.search(None, search_criteria)
             if typ != 'OK':
-                logging.error("Error searching for unread emails. Resetting connection.")
+                logging.error(f"Error searching for emails with criteria '{search_criteria}'. Resetting connection.")
                 if mail_connection:
                     try: mail_connection.logout()
                     except Exception: pass
@@ -290,21 +264,20 @@ def main():
 
             email_ids = data[0].split()
             if not email_ids:
-                logging.info(f"No unread emails found in {SOURCE_INBOX}. Waiting for {CHECK_INTERVAL_SECONDS} seconds.")
+                logging.info(f"No new (unseen/unflagged) emails found. Waiting for {CHECK_INTERVAL_SECONDS} seconds.")
                 time.sleep(CHECK_INTERVAL_SECONDS)
                 continue
 
-            logging.info(f"Found {len(email_ids)} unread email(s) to process in {SOURCE_INBOX}.")
+            logging.info(f"Found {len(email_ids)} new email(s) to process in {SOURCE_INBOX}.")
 
             for email_id in reversed(email_ids):
                 if not is_imap_connected(mail_connection):
                     logging.warning("Connection lost during batch processing. Breaking to reconnect.")
-                    break # Break from the for-loop to trigger reconnect at the start of the while-loop
+                    break
 
-                logging.info(f"Processing unread email ID: {email_id.decode()}")
+                logging.info(f"Processing new email ID: {email_id.decode()}")
 
-                # Fetching the email will mark it as read ('\Seen') by default.
-                # We will manually change this status back to unread for specific categories.
+                # Fetching the email marks it as read ('\Seen') by default.
                 status, msg_data = mail_connection.fetch(email_id, '(RFC822)')
                 if status != 'OK':
                     logging.error(f"Failed to fetch email content for ID {email_id.decode()}. Skipping.")
@@ -329,36 +302,35 @@ def main():
 
                             if not destination_folder:
                                 logging.error(f"Unknown category '{category}'. Email ID {email_id.decode()} will not be moved.")
+                                # Mark as flagged anyway to prevent reprocessing
+                                mail_connection.store(email_id, '+FLAGS', '(\\Flagged)')
                                 continue
 
                             ### MODIFICATION ###
-                            # Based on the category, decide the read/unread status.
+                            # Based on the category, decide the read/unread status and always flag it.
                             if category == "Personal":
-                                # This email stays in the inbox. We want it to remain unread.
-                                # The fetch marked it as read, so we REMOVE the \Seen flag.
-                                logging.info(f"Email ID {email_id.decode()} classified as Personal. Marking as UNREAD in {SOURCE_INBOX}.")
-                                mail_connection.store(email_id, '-FLAGS', '(\\Seen)')
+                                # Stays in inbox. Mark as UNREAD and FLAGGED to prevent re-processing.
+                                logging.info(f"Email ID {email_id.decode()} classified as Personal. Marking as UNREAD and FLAGGED in {SOURCE_INBOX}.")
+                                mail_connection.store(email_id, '-FLAGS (\\Seen) +FLAGS (\\Flagged)')
 
                             elif category == "Accounts":
-                                # This email will be moved. We want it to be UNREAD in the destination folder.
-                                # To do this, we mark it as unread *before* we copy it.
-                                logging.info(f"Email ID {email_id.decode()} classified as Accounts. Marking as UNREAD before moving.")
-                                mail_connection.store(email_id, '-FLAGS', '(\\Seen)')
+                                # Move to Accounts. Mark as UNREAD and FLAGGED before moving.
+                                logging.info(f"Email ID {email_id.decode()} classified as Accounts. Marking as UNREAD and FLAGGED before moving.")
+                                mail_connection.store(email_id, '-FLAGS (\\Seen) +FLAGS (\\Flagged)')
                                 if move_email(mail_connection, email_id, destination_folder):
                                     logging.info(f"Successfully moved email ID {email_id.decode()} to '{destination_folder}' as unread.")
                                 else:
                                     logging.error(f"Failed to move email ID {email_id.decode()} to '{destination_folder}'.")
 
                             elif category in ["Spam", "Promotions"]:
-                                # For these, we are okay with them being marked as read.
-                                # The initial fetch already marked it as '\Seen', so we just move it.
-                                logging.info(f"Email ID {email_id.decode()} classified as {category}. Moving as read.")
+                                # Move to destination. Email is already '\Seen' from fetch. Just add the FLAG.
+                                logging.info(f"Email ID {email_id.decode()} classified as {category}. Marking as FLAGGED and moving.")
+                                mail_connection.store(email_id, '+FLAGS', '(\\Flagged)')
                                 if move_email(mail_connection, email_id, destination_folder):
                                     logging.info(f"Successfully moved email ID {email_id.decode()} to '{destination_folder}'.")
                                 else:
                                     logging.error(f"Failed to move email ID {email_id.decode()} to '{destination_folder}'.")
 
-                            # Add delay after processing each email
                             logging.info(f"Waiting for {PROCESS_DELAY_SECONDS} seconds...")
                             time.sleep(PROCESS_DELAY_SECONDS)
 
@@ -396,21 +368,13 @@ def main():
 
 if __name__ == '__main__':
     # --- PRE-RUN CHECKS ---
-    if not os.getenv('EMAIL_PASSWORD'):
-        print("ERROR: EMAIL_PASSWORD environment variable not set. Please set it before running.")
-        print("Example: export EMAIL_PASSWORD='your_actual_password'")
-        exit(1)
-    if not os.getenv('GEMINI_API_KEY'):
-        print("ERROR: GEMINI_API_KEY environment variable not set. Please set it before running.")
-        print("Example: export GEMINI_API_KEY='your_gemini_api_key'")
+    if not os.getenv('EMAIL_PASSWORD') or not os.getenv('GEMINI_API_KEY'):
+        print("ERROR: EMAIL_PASSWORD or GEMINI_API_KEY environment variable not set. Exiting.")
         exit(1)
 
-    # Check if essential destination folders are likely to cause issues
-    if FOLDER_MAPPING["Accounts"] == "Accounts":
-        print(f"INFO: Ensure the IMAP folder '{FOLDER_MAPPING['Accounts']}' exists on your email server.")
-    if FOLDER_MAPPING["Spam"].lower() not in ["spam", "[gmail]/spam", "inbox.spam"]:
-        print(f"INFO: Ensure the IMAP folder '{FOLDER_MAPPING['Spam']}' exists and is correctly named.")
-    if FOLDER_MAPPING["Promotions"].lower() not in ["junk", "junk e-mail", "[gmail]/junk"]:
-        print(f"INFO: Ensure the IMAP folder '{FOLDER_MAPPING['Promotions']}' exists and is correctly named.")
+    print("INFO: This script will add a 'flag' (star) to emails it processes to prevent re-scanning them.")
+    print(f"INFO: Ensure the IMAP folder '{FOLDER_MAPPING['Accounts']}' exists on your email server.")
+    print(f"INFO: Check that your Spam folder is correctly named: '{FOLDER_MAPPING['Spam']}'")
+    print(f"INFO: Check that your Promotions folder is correctly named: '{FOLDER_MAPPING['Promotions']}'")
 
     main()
