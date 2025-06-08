@@ -5,4 +5,5 @@ __pycache__/
 *$py.class
 config.yaml
 port_scanner.log
+processed_uids.txt
 *.log
