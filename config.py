@@ -8,7 +8,7 @@ LOG_LEVEL = "DEBUG"   # Set to "DEBUG" for detailed debugging output
 LOG_FILE = "mail_manager.log"
 
 # --- IMAP Server Settings ---
-IMAP_HOST = 'moose.mxrouting.net'
+IMAP_HOST = os.getenv('IMAP_SERVER')
 IMAP_USER = os.getenv('EMAIL_USERNAME')
 IMAP_PASSWORD = os.getenv('EMAIL_PASSWORD')
 IMAP_PORT = 993
