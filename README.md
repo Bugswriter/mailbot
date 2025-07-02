@@ -18,7 +18,7 @@
    ```bash
    git clone https://github.com/Bugswriter/mailbot.git
    cd mailbot
-````
+    ````
 
 2. **Create a virtual environment and activate it:**
 
