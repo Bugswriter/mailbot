@@ -1,6 +1,6 @@
-# 📬 mailbot
+# 📬 mailbot ai
 
-`mailbot` is a Python-based email automation bot that connects to your inbox via IMAP, reads unread messages, and uses **Gemini AI** to intelligently classify and summarize them.
+`mailbot-ai` is a Python-based email automation bot that connects to your inbox via IMAP, reads unread messages, and uses **Gemini AI** to intelligently classify and summarize them.
 
 ---
 
