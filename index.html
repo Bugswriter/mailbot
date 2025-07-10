@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>mailbot-ai: Gemini-Powered Inbox Bot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'VT323', monospace;
+      background: #0a0a0a;
+      color: #39ff14;
+      padding: 2em;
+      line-height: 1.6;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 3em;
+    }
+    header h1 {
+      font-size: 3em;
+      letter-spacing: 1px;
+      text-shadow: 0 0 5px #39ff14;
+    }
+    header p {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 1.2em;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    section {
+      max-width: 800px;
+      margin: auto;
+      margin-bottom: 3em;
+    }
+    h2 {
+      color: #00ffff;
+      border-bottom: 1px solid #333;
+      padding-bottom: 0.2em;
+    }
+    pre {
+      background: #111;
+      color: #9fef00;
+      padding: 1em;
+      overflow-x: auto;
+      border-left: 4px solid #ff0080;
+    }
+    ul {
+      padding-left: 1.2em;
+    }
+    a {
+      color: #00ffff;
+    }
+    footer {
+      text-align: center;
+      font-size: 0.9em;
+      color: #777;
+      margin-top: 5em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📬 mailbot</h1>
+    <p>Python-based IMAP email assistant using Gemini AI for intelligent classification and summarization of unread emails. Built with system automation in mind.</p>
+  </header>
+
+  <section>
+    <h2>⚙️ Requirements</h2>
+    <ul>
+      <li>Python 3.8 or higher</li>
+      <li>A <code>.env</code> file with email and Gemini API credentials</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>📦 Setup</h2>
+    <pre><code>git clone https://github.com/Bugswriter/mailbot.git
+cd mailbot
+python -m venv venv
+source venv/bin/activate  # For Linux/macOS
+pip install -r requirements.txt</code></pre>
+
+    <p><strong>Create a <code>.env</code> file:</strong></p>
+    <pre><code>EMAIL_USERNAME=your_email@example.com
+EMAIL_PASSWORD=your_email_password_or_app_password
+IMAP_SERVER=imap.your-email-provider.com
+GEMINI_API_KEY=your_gemini_api_key</code></pre>
+  </section>
+
+  <section>
+    <h2>🤖 Features</h2>
+    <ul>
+      <li>Connects to any IMAP inbox</li>
+      <li>Uses Gemini AI to classify emails into <code>Personal</code>, <code>Spam</code>, <code>Accounts</code>, or <code>Promotions</code></li>
+      <li>Optionally summarizes email contents</li>
+      <li>Fully customizable logic via <code>prompt_template.py</code></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>🚀 Usage</h2>
+    <pre><code>python main.py</code></pre>
+  </section>
+
+  <section>
+    <h2>🔧 Optional: Run as systemd Service</h2>
+    <pre><code>[Unit]
+Description=MailBot - AI Email Classifier
+After=network.target
+
+[Service]
+User=your_username
+WorkingDirectory=/path/to/mailbot
+ExecStart=/path/to/mailbot/venv/bin/python /path/to/mailbot/main.py
+Restart=always
+Environment="EMAIL_USERNAME=your_email"
+Environment="EMAIL_PASSWORD=your_password"
+Environment="IMAP_SERVER=imap.server"
+Environment="GEMINI_API_KEY=your_key"
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+    <pre><code>sudo systemctl daemon-reexec
+sudo systemctl enable --now mailbot.service</code></pre>
+  </section>
+
+  <section>
+    <h2>🧠 Classification Prompt</h2>
+    <p>Gemini classifies email using a prompt with strict rules and fallback logic:</p>
+    <pre><code>Categories: Personal, Spam, Accounts, Promotions
+
+- Personal: Human-written, conversational
+- Spam: Unwanted, scammy, suspicious
+- Accounts: OTPs, alerts, invoices, orders
+- Promotions: Marketing/newsletter
+
+If unsure, default to "Personal".
+If domain is Gmail/Yahoo/Outlook/Zoho → Personal</code></pre>
+  </section>
+
+  <section>
+    <h2>📄 License</h2>
+    <p>This project is licensed under the <strong>GNU General Public License v3.0</strong>.</p>
+  </section>
+
+  <footer>
+    <p>Created by <a href="https://github.com/bugswriter">bugswriter</a> · Gemini-Powered · Inspired by Serial Experiments Lain</p>
+  </footer>
+</body>
+</html>
